@@ -2,6 +2,7 @@ const express=require("express")
 const morgan=require("morgan")
 const connectDB=require("./config/db")
 const userRoute=require("./routes/user.route")
+const projectRoute=require('./routes/project.route');
 const cookieParser=require("cookie-parser")
 const cors=require("cors")
 connectDB()
@@ -21,6 +22,7 @@ app.use(express.urlencoded({extended:true}));
 app.use(cookieParser())
 
 app.use('/users', userRoute);
+app.use('/projects',projectRoute);
 app.get("/",(req,res)=>{
     res.send("Hello world")
 })

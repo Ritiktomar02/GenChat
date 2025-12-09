@@ -16,3 +16,9 @@ exports.createUser = async ({ email, password }) => {
 };
 
 
+exports.getAllUsers = async ({ userId }) => {
+    const users = await User.find({
+        _id: { $ne: userId }
+    });
+    return users;
+}
