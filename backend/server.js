@@ -1,13 +1,105 @@
 require("dotenv").config();
-const http=require("http")
+const http = require("http");
+const { Server } = require('socket.io');
+const  jwt=require('jsonwebtoken');
+const mongoose=require('mongoose');
+const projectModel=require('./models/project.model');
+
+const PORT = process.env.PORT || 3000;
+const app = require("./app.js");
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "*",
+    methods: ["GET", "POST"],
+  }
+});
+
+io.use(async (socket, next) => {
+
+    try {
+
+        const token = socket.handshake.auth?.token || socket.handshake.headers.authorization?.split(' ')[ 1 ];
+      //   const projectId = socket.handshake.query.projectId;
+
+      //   if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      //       return next(new Error('Invalid projectId'));
+      //   }
 
 
-const PORT=process.env.PORT || 3000
-const app=require("./app.js")
-
-const server=http.createServer(app)
+      //  socket.project = await projectModel.findById(projectId);
 
 
-server.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`)
+        if (!token) {
+            return next(new Error('Authentication error'))
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (!decoded) {
+            return next(new Error('Authentication error'))
+        }
+
+
+        socket.user = decoded;
+
+        next();
+
+    } catch (error) {
+        next(error)
+    }
+
 })
+
+
+io.on('connection', socket => {
+    socket.roomId = socket.project._id.toString()
+
+
+    console.log('a user connected');
+
+
+
+    socket.join(socket.roomId);
+
+    socket.on('project-message', async data => {
+
+        const message = data.message;
+
+        const aiIsPresentInMessage = message.includes('@ai');
+        socket.broadcast.to(socket.roomId).emit('project-message', data)
+
+        if (aiIsPresentInMessage) {
+
+
+            const prompt = message.replace('@ai', '');
+
+            const result = await generateResult(prompt);
+
+
+            io.to(socket.roomId).emit('project-message', {
+                message: result,
+                sender: {
+                    _id: 'ai',
+                    email: 'AI'
+                }
+            })
+
+
+            return
+        }
+
+
+    })
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+        socket.leave(socket.roomId)
+    });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
