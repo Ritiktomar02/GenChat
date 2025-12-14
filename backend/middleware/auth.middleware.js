@@ -25,3 +25,4 @@ exports.authUser = async (req, res, next) => {
     res.status(401).send({ error: "Unauthorized User" });
   }
 };
+

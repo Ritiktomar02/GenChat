@@ -25,7 +25,6 @@ const Register = () => {
       })
       .catch((err) => {
         const data = err.response?.data;
-        console.log(data);
         if (!data) {
           toast.error("Something went wrong");
           return;

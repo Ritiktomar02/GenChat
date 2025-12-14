@@ -3,6 +3,7 @@ const morgan=require("morgan")
 const connectDB=require("./config/db")
 const userRoute=require("./routes/user.route")
 const projectRoute=require('./routes/project.route');
+const aiRoutes=require('./routes/ai.route');
 const cookieParser=require("cookie-parser")
 const cors=require("cors")
 connectDB()
@@ -23,6 +24,7 @@ app.use(cookieParser())
 
 app.use('/users', userRoute);
 app.use('/projects',projectRoute);
+app.use("/ai", aiRoutes)
 app.get("/",(req,res)=>{
     res.send("Hello world")
 })

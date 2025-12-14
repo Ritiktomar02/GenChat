@@ -29,7 +29,7 @@ userschema.methods.isValidPassword=async function (password){
 }
 
 userschema.methods.generateJwt= function (){
-    return jwt.sign({email:this.email},process.env.JWT_SECRET,{expiresIn:'24h'})
+    return jwt.sign({_id: this._id,email:this.email},process.env.JWT_SECRET,{expiresIn:'24h'})
 }
 
 module.exports=mongoose.model("User",userschema)

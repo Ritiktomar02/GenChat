@@ -4,22 +4,16 @@ import UserContext from "../context/user.context";
 import axios from "../config/axios";
 
 const UserAuth = ({ children }) => {
-  const { user, setUser } = useContext(UserContext);
+  const { setUser } = useContext(UserContext);
   const [loading, setLoading] = useState(true);
-
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const token = localStorage.getItem("token");
+    const verifyUser = async () => {
       if (!token) {
         setLoading(false);
         navigate("/login");
-        return;
-      }
-
-      if (user) {
-        setLoading(false);
         return;
       }
 
@@ -27,20 +21,21 @@ const UserAuth = ({ children }) => {
         const res = await axios.post("/users/profile");
         setUser(res.data.user);
       } catch (err) {
-        console.log(err)
-        localStorage.removeItem("token");
-        navigate("/login");
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
-  }, [token, user, navigate, setUser]);
+    verifyUser();
+  }, [navigate, setUser]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center text-white">
+      <div className="min-h-screen flex items-center justify-center text-white">
         Loading...
       </div>
     );
