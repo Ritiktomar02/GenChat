@@ -122,7 +122,7 @@ const Project = () => {
     if (!webContainer) {
       getWebContainer().then((container) => {
         setWebContainer(container);
-
+        
       });
     }
 
@@ -353,7 +353,7 @@ const Project = () => {
                   installProcess.output.pipeTo(
                     new WritableStream({
                       write(chunk) {
-                     //   console.log(chunk);
+                        console.log(chunk);
                       },
                     })
                   );
@@ -369,7 +369,7 @@ const Project = () => {
                   tempRunProcess.output.pipeTo(
                     new WritableStream({
                       write(chunk) {
-                     //   console.log(chunk);
+                        console.log(chunk);
                       },
                     })
                   );
