@@ -15,15 +15,21 @@ const initializeSocket = (httpServer) => {
 
   io.use(async (socket, next) => {
     try {
-      // Parse accessToken from cookies (httpOnly cookie sent via withCredentials)
-      const cookieHeader = socket.handshake.headers.cookie || "";
-      const cookies = Object.fromEntries(
-        cookieHeader.split(";").map((c) => {
-          const [key, ...val] = c.trim().split("=");
-          return [key, val.join("=")];
-        })
-      );
-      const token = cookies.accessToken;
+      // Try token from auth handshake first (production cross-origin),
+      // then fall back to cookies (local development)
+      let token = socket.handshake.auth?.token;
+
+      if (!token) {
+        const cookieHeader = socket.handshake.headers.cookie || "";
+        const cookies = Object.fromEntries(
+          cookieHeader.split(";").map((c) => {
+            const [key, ...val] = c.trim().split("=");
+            return [key, val.join("=")];
+          })
+        );
+        token = cookies.accessToken;
+      }
+
       const projectId = socket.handshake.query.projectId;
 
       if (!token) {

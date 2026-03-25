@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+// In production, API calls go through Vercel rewrites (/api/...) so cookies are first-party.
+// In development, they go directly to the backend URL.
+const BASE_URL = import.meta.env.VITE_BASE_URL || "/api";
 
 export const PROJECT = {
   CREATE: `${BASE_URL}/projects/create`,

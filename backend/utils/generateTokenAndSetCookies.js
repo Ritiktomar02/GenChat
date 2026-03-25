@@ -30,9 +30,10 @@ export const generateTokenAndSetCookies = async (res, userId) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   };
 
-  // Access token cookie — short maxAge
+  // Access token cookie — short maxAge, NOT httpOnly so frontend can read it for Socket.IO auth
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
+    httpOnly: false,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
