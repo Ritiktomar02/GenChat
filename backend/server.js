@@ -1,90 +1,55 @@
-require("dotenv").config();
-const http = require("http");
-const { Server } = require("socket.io");
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
-const projectModel = require("./models/project.model");
-const generateResult = require("./services/ai.service");
+import dotenv from "dotenv";
+dotenv.config();
 
-const PORT = process.env.PORT || 3000;
-const app = require("./app.js");
+import express from "express";
+import http from "http";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 
-const server = http.createServer(app);
+import connectDB from "./config/db-connection.js";
+import initializeSocket from "./config/socket.js";
+import userRoute from "./routes/user-route.js";
+import projectRoute from "./routes/project-route.js";
+import aiRoutes from "./routes/ai-route.js";
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL ,
-    methods: ["GET", "POST"],
-  },
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(express.static("public"));
+
+
+app.use("/user", userRoute);
+app.use("/projects", projectRoute);
+app.use("/ai", aiRoutes);
+
+app.get("/", (req, res) => {
+  res.send("Server is running");
 });
 
-io.use(async (socket, next) => {
-  try {
-    const token =
-      socket.handshake.auth?.token ||
-      socket.handshake.headers.authorization?.split(" ")[1];
-    const projectId = socket.handshake.query.projectId;
+const httpServer = http.createServer(app);
+initializeSocket(httpServer);
 
-    if (!mongoose.Types.ObjectId.isValid(projectId)) {
-      return next(new Error("Invalid projectId"));
-    }
+const startServer = async () => {
+  await connectDB();
 
-    socket.project = await projectModel.findById(projectId);
-
-    if (!token) {
-      return next(new Error("Authentication error"));
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded) {
-      return next(new Error("Authentication error"));
-    }
-
-    socket.user = decoded;
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-io.on("connection", (socket) => {
-  socket.roomId = socket.project._id.toString();
-
-  console.log("a user connected");
-
-  socket.join(socket.roomId);
-
-  socket.on("project-message", async (data) => {
-    const message = data.message;
-
-    const aiIsPresentInMessage = message.includes("@ai");
-    socket.broadcast.to(socket.roomId).emit("project-message", data);
-
-    if (aiIsPresentInMessage) {
-      const prompt = message.replace("@ai", "");
-
-      const result = await generateResult(prompt);
-
-      io.to(socket.roomId).emit("project-message", {
-        message: result,
-        sender: {
-          _id: "ai",
-          email: "AI",
-        },
-      });
-
-      return;
+  httpServer.listen(PORT, () => {
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Server running on port ${PORT}`);
     }
   });
+};
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-    socket.leave(socket.roomId);
-  });
-});
-
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+startServer();
