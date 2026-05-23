@@ -1,7 +1,13 @@
-import { X, Users } from "lucide-react";
+import { X, Users, UserMinus } from "lucide-react";
 import { Avatar } from "../Navbar";
 
-const CollaboratorPanel = ({ project, isOpen, onClose }) => {
+const CollaboratorPanel = ({ project, isOpen, onClose, currentUserId, onRemoveUser }) => {
+  const adminId =
+    typeof project?.createdBy === "object"
+      ? project?.createdBy?._id
+      : project?.createdBy;
+  const isCurrentUserAdmin = adminId && currentUserId && adminId === currentUserId;
+
   return (
     <div
       className={`absolute inset-0 z-20 flex flex-col transition-all duration-300
@@ -25,20 +31,41 @@ const CollaboratorPanel = ({ project, isOpen, onClose }) => {
       </header>
 
       <div className="flex flex-col gap-1.5 p-3 overflow-auto grow">
-        {project?.users?.map((u, index) => (
-          <div
-            key={`${u._id}-${index}`}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 transition-colors"
-          >
-            <Avatar user={u} size="w-9 h-9" textSize="text-sm" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-200 truncate">
-                {u.username || u.email}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{u.email}</p>
+        {project?.users?.map((u, index) => {
+          const isAdmin = u._id === adminId;
+          const isSelf = u._id === currentUserId;
+          return (
+            <div
+              key={`${u._id}-${index}`}
+              className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 transition-colors"
+            >
+              <Avatar user={u} size="w-9 h-9" textSize="text-sm" />
+              <div className="min-w-0 grow">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-200 truncate">
+                    {u.username || u.email}
+                    {isSelf && <span className="text-gray-500"> (You)</span>}
+                  </p>
+                  {isAdmin && (
+                    <span className="text-[10px] uppercase tracking-wide font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 truncate">{u.email}</p>
+              </div>
+              {isCurrentUserAdmin && !isAdmin && (
+                <button
+                  onClick={() => onRemoveUser?.(u._id)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                  title="Remove collaborator"
+                >
+                  <UserMinus className="size-4" />
+                </button>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -28,6 +28,17 @@ CRITICAL — Code Generation Rules:
 - Every file must have complete, working code — no placeholders or "TODO" comments.
 - The code should work immediately if someone copies all files into a project folder and runs npm install && npm start.
 
+CRITICAL — Formatting Rules (apply to EVERY file in fileTree, including CSS, HTML, JSON):
+- NEVER minify code. Write multi-line, one statement / declaration per line.
+- Always use real newline escapes (\\n in the JSON string) between every logical line. Do NOT put multiple statements or rules on the same line.
+- Use 2-space indentation. Indent nested blocks.
+- CSS: each selector on its own line; opening brace at the end of the selector line; each property/value on its own line; closing brace on its own line; one blank line between rules. Example contents value:
+  ".container {\\n  display: flex;\\n  gap: 12px;\\n}\\n\\n.button {\\n  color: white;\\n}"
+- HTML: each element on its own line; indent children; never collapse a document onto one line.
+- JS/TS: one statement per line; opening braces on the same line as their keyword; closing braces on their own line.
+- JSON file contents: pretty-printed with 2-space indent, one key per line.
+- Keep lines under ~100 characters when reasonable; break long lines logically.
+
 Examples:
 
 user: Create an express server with a health check endpoint

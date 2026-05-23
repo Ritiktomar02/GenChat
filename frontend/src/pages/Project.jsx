@@ -20,7 +20,7 @@ const Project = () => {
   const navigate = useNavigate();
 
   const { user } = useContext(UserContext);
-  const { addUserToProject, updateFileTree, getProject } =
+  const { addUserToProject, removeUserFromProject, updateFileTree, getProject } =
     useContext(ProjectContext);
 
   const [project, setProject] = useState(location.state?.project || null);
@@ -36,6 +36,7 @@ const Project = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [aiThinking, setAiThinking] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
 
   // Editor state
   const [fileTree, setFileTree] = useState({});
@@ -70,6 +71,15 @@ const Project = () => {
       setMessages((prev) => [...prev, data]);
     });
 
+    receiveMessage("ai-busy", (busy) => {
+      setAiBusy(Boolean(busy));
+    });
+
+    receiveMessage("ai-error", (payload) => {
+      setAiThinking(false);
+      toast.error(payload?.message || "AI request failed");
+    });
+
     getProject(project._id).then((p) => {
       if (p) {
         setProject(p);
@@ -89,12 +99,32 @@ const Project = () => {
 
   const send = () => {
     if (!message.trim()) return;
+    if (message.includes("@ai") && (aiThinking || aiBusy)) {
+      toast.error(
+        aiThinking
+          ? "Wait for the current AI response to finish."
+          : "A collaborator is using AI right now."
+      );
+      return;
+    }
     sendMessage("project-message", { message, sender: user });
     setMessages((prev) => [...prev, { sender: user, message }]);
     if (message.includes("@ai")) {
       setAiThinking(true);
+      setAiBusy(true);
     }
     setMessage("");
+  };
+
+  const adminId =
+    typeof project?.createdBy === "object"
+      ? project?.createdBy?._id
+      : project?.createdBy;
+  const isAdmin = adminId && user?._id && adminId === user._id;
+
+  const handleRemoveUser = async (userId) => {
+    const updated = await removeUserFromProject(project._id, userId);
+    if (updated) setProject(updated);
   };
 
   const handleAddCollaborators = async (selectedIds) => {
@@ -195,13 +225,15 @@ const Project = () => {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-              title="Add collaborator"
-            >
-              <UserPlus className="size-4" />
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                title="Add collaborator"
+              >
+                <UserPlus className="size-4" />
+              </button>
+            )}
             <button
               onClick={() => setIsSidePanelOpen(true)}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -219,12 +251,15 @@ const Project = () => {
           send={send}
           userId={user._id}
           aiThinking={aiThinking}
+          aiBusy={aiBusy}
         />
 
         <CollaboratorPanel
           project={project}
           isOpen={isSidePanelOpen}
           onClose={() => setIsSidePanelOpen(false)}
+          currentUserId={user?._id}
+          onRemoveUser={handleRemoveUser}
         />
       </section>
 
@@ -273,7 +308,11 @@ const Project = () => {
       {/* Add Collaborator Modal */}
       {isModalOpen && (
         <CollaboratorModal
-          users={allUsers}
+          users={allUsers.filter(
+            (u) =>
+              u._id !== user?._id &&
+              !project.users?.some((pu) => (pu._id || pu) === u._id)
+          )}
           onClose={() => setIsModalOpen(false)}
           onAdd={handleAddCollaborators}
         />

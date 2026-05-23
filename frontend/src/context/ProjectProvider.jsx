@@ -44,6 +44,20 @@ const ProjectProvider = ({ children }) => {
     }
   };
 
+  const updateProject = async (projectId, name) => {
+    try {
+      const res = await axios.put(PROJECT.UPDATE(projectId), { name });
+      setProjects((prev) =>
+        prev.map((p) => (p._id === projectId ? { ...p, name: res.data.project.name } : p))
+      );
+      toast.success("Project renamed");
+      return res.data.project;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to rename project");
+      return null;
+    }
+  };
+
   const addUserToProject = async (projectId, userIds) => {
     try {
       const res = await axios.put(PROJECT.ADD_USER, {
@@ -54,6 +68,17 @@ const ProjectProvider = ({ children }) => {
       return res.data.project;
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add collaborators");
+      return null;
+    }
+  };
+
+  const removeUserFromProject = async (projectId, userId) => {
+    try {
+      const res = await axios.put(PROJECT.REMOVE_USER, { projectId, userId });
+      toast.success("Collaborator removed");
+      return res.data.project;
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove collaborator");
       return null;
     }
   };
@@ -84,7 +109,9 @@ const ProjectProvider = ({ children }) => {
         fetchProjects,
         createProject,
         deleteProject,
+        updateProject,
         addUserToProject,
+        removeUserFromProject,
         updateFileTree,
         getProject,
       }}

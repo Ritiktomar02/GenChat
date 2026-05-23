@@ -36,7 +36,9 @@ function renderAiMessage(rawMessage) {
   }
 }
 
-const ChatPanel = ({ messages, message, setMessage, send, userId, aiThinking }) => {
+const ChatPanel = ({ messages, message, setMessage, send, userId, aiThinking, aiBusy }) => {
+  const aiMentioned = message.includes("@ai");
+  const aiLocked = aiMentioned && (aiThinking || aiBusy);
   const messageBoxRef = useRef(null);
 
   useEffect(() => {
@@ -129,14 +131,21 @@ const ChatPanel = ({ messages, message, setMessage, send, userId, aiThinking }) 
           <input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            className="grow px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent text-sm text-gray-200 placeholder-gray-500 outline-none min-w-0"
+            onKeyDown={(e) => e.key === "Enter" && !aiLocked && send()}
+            className="grow px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent text-sm text-gray-200 placeholder-gray-500 outline-none min-w-0 disabled:opacity-50"
             type="text"
-            placeholder="Type a message... use @ai for AI"
+            placeholder={
+              aiBusy && !aiThinking
+                ? "A collaborator is using AI..."
+                : aiThinking
+                ? "Waiting for AI response..."
+                : "Type a message... use @ai for AI"
+            }
+            disabled={aiLocked}
           />
           <button
             onClick={send}
-            disabled={!message.trim()}
+            disabled={!message.trim() || aiLocked}
             className="mr-1.5 p-2 sm:p-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-30 disabled:hover:bg-emerald-600 shrink-0"
           >
             <Send className="size-4" />

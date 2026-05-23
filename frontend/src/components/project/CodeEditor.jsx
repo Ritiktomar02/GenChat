@@ -83,10 +83,10 @@ const CodeEditor = ({
       {/* Editor area */}
       <div className="grow overflow-auto bg-[#0d1117] min-w-0">
         {fileContent !== undefined ? (
-          <pre className="hljs h-full m-0 p-0">
+          <pre className="hljs h-full m-0 p-0 whitespace-pre-wrap break-words">
             <code
               ref={codeRef}
-              className="language-javascript outline-none block p-3 sm:p-4 text-[12px] sm:text-[13px] leading-5 sm:leading-6 min-h-full"
+              className="language-javascript outline-none block p-3 sm:p-4 text-[12px] sm:text-[13px] leading-5 sm:leading-6 min-h-full whitespace-pre-wrap break-words"
               contentEditable
               suppressContentEditableWarning
               onBlur={(e) => onFileChange(currentFile, e.target.innerText)}

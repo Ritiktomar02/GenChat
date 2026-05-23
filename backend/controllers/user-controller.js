@@ -38,7 +38,7 @@ export const register = async (req, res) => {
       password: hashedPassword,
       picture: generateAvatar(username),
       verificationToken,
-      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      verificationTokenExpiresAt: Date.now() + 1 * 60 * 60 * 1000,
     });
 
     await generateTokenAndSetCookies(res, user._id);
@@ -96,7 +96,7 @@ export const login = async (req, res) => {
       // Resend verification code so user can verify
       const verificationToken = generateVerificationCode();
       existingUser.verificationToken = verificationToken;
-      existingUser.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+      existingUser.verificationTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
       await existingUser.save();
 
       await generateTokenAndSetCookies(res, existingUser._id);

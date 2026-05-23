@@ -1,5 +1,6 @@
 import Project from "../models/project-model.js";
 import mongoose from "mongoose";
+import { formatFileTree } from "../utils/format-code.js";
 
 export const createProject = async (req, res) => {
   try {
@@ -64,18 +65,18 @@ export const addUserToProject = async (req, res) => {
 
     const project = await Project.findOne({
       _id: projectId,
-      users: req.userId,
+      createdBy: req.userId,
     });
 
     if (!project) {
-      return res.status(400).json({ message: "Project not found or you don't belong to it" });
+      return res.status(403).json({ message: "Only the project admin can add collaborators" });
     }
 
     const updatedProject = await Project.findOneAndUpdate(
       { _id: projectId },
       { $addToSet: { users: { $each: users } } },
       { new: true }
-    );
+    ).populate("users");
 
     res.status(200).json({ success: true, message: "Users added successfully", project: updatedProject });
   } catch (error) {
@@ -101,6 +102,16 @@ export const getProjectById = async (req, res) => {
 
     if (!project) {
       return res.status(400).json({ message: "Project not found or you don't belong to it" });
+    }
+
+    if (project.fileTree && Object.keys(project.fileTree).length > 0) {
+      const formatted = await formatFileTree(project.fileTree);
+      const original = JSON.stringify(project.fileTree);
+      const next = JSON.stringify(formatted);
+      if (original !== next) {
+        project.fileTree = formatted;
+        await Project.findByIdAndUpdate(projectId, { fileTree: formatted });
+      }
     }
 
     res.status(200).json({ success: true, project });
@@ -220,22 +231,22 @@ export const removeUserFromProject = async (req, res) => {
 
     const project = await Project.findOne({
       _id: projectId,
-      users: req.userId,
+      createdBy: req.userId,
     });
 
     if (!project) {
-      return res.status(400).json({ message: "Project not found or you don't belong to it" });
+      return res.status(403).json({ message: "Only the project admin can remove collaborators" });
     }
 
-    if (project.users.length === 1) {
-      return res.status(400).json({ message: "Cannot remove the last user. Delete the project instead" });
+    if (project.createdBy.toString() === userId.toString()) {
+      return res.status(400).json({ message: "Admin cannot be removed from the project" });
     }
 
     const updatedProject = await Project.findOneAndUpdate(
       { _id: projectId },
       { $pull: { users: userId } },
       { new: true }
-    );
+    ).populate("users");
 
     res.status(200).json({ success: true, message: "User removed successfully", project: updatedProject });
   } catch (error) {

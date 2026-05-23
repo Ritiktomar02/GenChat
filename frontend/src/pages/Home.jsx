@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Users, Folder, Trash2, X } from "lucide-react";
+import { Plus, Users, Folder, Trash2, Pencil, X } from "lucide-react";
 import UserContext from "../context/UserContext";
 import ProjectContext from "../context/ProjectContext";
 
@@ -9,10 +9,13 @@ const Home = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const navigate = useNavigate();
 
   const { user } = useContext(UserContext);
-  const { projects, loadingProjects, fetchProjects, createProject, deleteProject } =
+  const { projects, loadingProjects, fetchProjects, createProject, deleteProject, updateProject } =
     useContext(ProjectContext);
 
   useEffect(() => {
@@ -36,6 +39,24 @@ const Home = () => {
   const handleDelete = async (e, projectId) => {
     e.stopPropagation();
     await deleteProject(projectId);
+  };
+
+  const openEdit = (e, project) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setEditName(project.name);
+  };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    if (!editName.trim() || !editingProject) return;
+    setSavingEdit(true);
+    const updated = await updateProject(editingProject._id, editName.trim());
+    setSavingEdit(false);
+    if (updated) {
+      setEditingProject(null);
+      setEditName("");
+    }
   };
 
   return (
@@ -100,12 +121,22 @@ const Home = () => {
                   {project.name}
                 </h2>
                 {project.createdBy === user?._id && (
-                  <button
-                    onClick={(e) => handleDelete(e, project._id)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all shrink-0"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={(e) => openEdit(e, project)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-emerald-500/20 text-gray-400 hover:text-emerald-400 transition-all"
+                      title="Rename project"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, project._id)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-all"
+                      title="Delete project"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-1.5 text-sm text-gray-400">
@@ -175,6 +206,68 @@ const Home = () => {
                     className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-medium transition disabled:opacity-50"
                   >
                     {creating ? "Creating..." : "Create"}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingProject && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setEditingProject(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 border border-white/10 p-5 sm:p-6 rounded-2xl w-full max-w-md text-white"
+            >
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="text-lg sm:text-xl font-bold">Rename Project</h2>
+                <button
+                  onClick={() => setEditingProject(null)}
+                  className="p-1 rounded-lg hover:bg-white/10 transition"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSave}>
+                <label className="block mb-2 text-sm text-gray-400">
+                  Project Name
+                </label>
+                <input
+                  onChange={(e) => setEditName(e.target.value)}
+                  value={editName}
+                  type="text"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 mb-5 transition"
+                  autoFocus
+                />
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingProject(null)}
+                    className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={savingEdit}
+                    className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-medium transition disabled:opacity-50"
+                  >
+                    {savingEdit ? "Saving..." : "Save"}
                   </motion.button>
                 </div>
               </form>

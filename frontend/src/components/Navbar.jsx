@@ -1,8 +1,9 @@
 import { useContext, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Home, Code2 } from "lucide-react";
+import { LogOut, Home } from "lucide-react";
 import UserContext from "../context/UserContext";
+import Logo from "./Logo";
 
 const getInitials = (user) => {
   if (user?.picture && !user.picture.startsWith("http")) return user.picture;
@@ -57,7 +58,7 @@ const Navbar = () => {
             onClick={() => navigate("/")}
             className="flex items-center gap-2"
           >
-            <Code2 className="size-5 sm:size-6 text-emerald-400" />
+            <Logo className="size-5 sm:size-6 text-emerald-400" />
             <span className="text-base sm:text-lg font-bold text-white">GenChat</span>
           </button>
 

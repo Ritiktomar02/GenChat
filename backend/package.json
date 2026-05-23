@@ -20,9 +20,11 @@
     "express": "^5.1.0",
     "googleapis": "^171.4.0",
     "groq-sdk": "^1.1.1",
+    "js-beautify": "^1.15.4",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.3",
     "nodemailer": "^8.0.3",
+    "prettier": "^3.8.3",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
