@@ -92,7 +92,7 @@ const initializeSocket = (httpServer) => {
 
     socket.on("project-message", (data) => {
       socket.broadcast.to(roomId).emit("project-message", data);
-      if (data.message?.includes("@ai")) {
+      if (data.message.trim().startsWith("@ai")) {
         handleAiPrompt(io, socket, data.message);
       }
     });
